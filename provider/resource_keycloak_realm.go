@@ -151,15 +151,93 @@ func resourceKeycloakRealm() *schema.Resource {
 		},
 	}
 
-	webAuthnPasswordlessSchema := map[string]*schema.Schema{}
-	for k, v := range webAuthnSchema {
-		webAuthnPasswordlessSchema[k] = v
-	}
+	webAuthnPasswordlessSchema := map[string]*schema.Schema{
+		"acceptable_aaguids": {
+			Type: schema.TypeSet,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+			Optional: true,
+		},
+		"extra_origins": {
+			Type: schema.TypeSet,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+			Optional: true,
+		},
+		"attestation_conveyance_preference": {
+			Type:         schema.TypeString,
+			Description:  "Either none, indirect or direct",
+			Optional:     true,
+			Default:      "not specified",
+			ValidateFunc: validation.StringInSlice([]string{"not specified", "none", "indirect", "direct", "enterprise"}, false),
+		},
+		"authenticator_attachment": {
+			Type:         schema.TypeString,
+			Description:  "Either platform or cross-platform",
+			Optional:     true,
+			Default:      "not specified",
+			ValidateFunc: validation.StringInSlice([]string{"not specified", "platform", "cross-platform"}, false),
+		},
+		"avoid_same_authenticator_register": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  false,
+		},
+		"create_timeout": {
+			Type:     schema.TypeInt,
+			Optional: true,
+			Default:  0,
+			ValidateFunc: func(i interface{}, k string) ([]string, []error) {
+				v := i.(int)
 
-	webAuthnPasswordlessSchema["passwordless_passkeys_enabled"] = &schema.Schema{
-		Type:     schema.TypeBool,
-		Optional: true,
-		Default:  false,
+				// https://w3c.github.io/webauthn/#sctn-createCredential
+				if v != 0 && (v < 30 || v > 600) {
+					return []string{"the recommended timeout value is between 30<->180 seconds (inclusive, userVerification=discouraged) or 30<->600 seconds (inclusive, userVerification=(required || preferred))"}, nil
+				}
+
+				return nil, nil
+			},
+		},
+		"require_resident_key": {
+			Type:         schema.TypeString,
+			Description:  "Either Yes or No",
+			Optional:     true,
+			Default:      "not specified",
+			ValidateFunc: validation.StringInSlice([]string{"not specified", "Yes", "No"}, false),
+		},
+		"relying_party_entity_name": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  "keycloak",
+		},
+		"relying_party_id": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  "",
+		},
+		"signature_algorithms": {
+			Type: schema.TypeSet,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+			Description: "Keycloak lists ES256, ES384, ES512, RS256, RS384, RS512, RS1 at the time of writing",
+			Optional:    true,
+			Computed:    true,
+		},
+		"user_verification_requirement": {
+			Type:         schema.TypeString,
+			Description:  "Either required, preferred or discouraged",
+			Optional:     true,
+			Default:      "not specified",
+			ValidateFunc: validation.StringInSlice([]string{"not specified", "required", "preferred", "discouraged"}, false),
+		},
+		"passwordless_passkeys_enabled": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  false,
+		},
 	}
 
 	return &schema.Resource{
