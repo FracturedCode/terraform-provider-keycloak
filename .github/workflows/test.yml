@@ -12,6 +12,7 @@ on:
       - "release/*"
     paths-ignore:
       - '**/*.md'
+  workflow_dispatch:
 
 jobs:
   verify:
